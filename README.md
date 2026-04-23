@@ -73,6 +73,87 @@ bb version
 
 ---
 
+## ⚙️ CLI Workflow (End-to-End)
+
+BrikByteOS is designed as a deterministic pipeline:
+```
+Run → Score → Gate → Inspect
+```
+
+### 1️⃣ Help
+
+Explore available commands:
+```bash
+bb --help
+```
+
+### 2️⃣ Run (Collect Evidence)
+
+Execute a deterministic run:
+```bash
+bb run --all --workdir <path-to-root>
+```
+Or run a specific adapter:
+```bash
+bb run --adapter jest --workdir <path-to-root>
+```
+This produces a run under:
+```
+.bb/runs/<run-id>/
+```
+
+### 3️⃣ Score (Quantify Risk)
+
+Compute a release score:
+```bash
+bb score --manifest .bb/runs/<run-id>/manifest.json --workdir <path-to-root>
+```
+Outputs:
+- score (0–100)
+- risk factors
+
+### 4️⃣ Gate (Decision)
+
+Evaluate release readiness:
+```bash
+bb gate --manifest .bb/runs/<run-id>/manifest.json --policy production --workdir <path-to-root>
+```
+Possible outcomes:
+- APPROVED ✅
+- REJECTED ❌
+- CONDITIONAL ⚠️
+
+
+### 5️⃣ Inspect (Understand Results)
+
+Inspect run details:
+```bash
+bb inspect --run-id <run-id> --workdir <path-to-root>
+```
+This allows you to:
+- view normalized outputs
+- trace failures
+- understand scoring decisions
+
+### 6️⃣ Optional: Visual Inspection (Offline Inspection Bundle)
+
+Render a human-friendly report:
+```
+bb inspect --run-id <run-id> --workdir <path-to-root> --ui
+bb inspect --run-id <run-id> --workdir <path-to-root> --html
+```
+Output:
+
+- `.bb/runs/<run-id>/ui-data.json`
+- `.bb/runs/<run-id>/report.html`
+
+Then open in browser:
+```bash
+open .bb/runs/<run-id>/report.html     # macOS
+xdg-open .bb/runs/<run-id>/report.html # Linux
+```
+---
+
 ## 🔄 Upgrading
 
 To upgrade, repeat the installation steps with a newer version:
@@ -137,3 +218,25 @@ If you encounter issues with installation or binaries:
 Binary usage is governed by the license defined in the source repository.
 
 Refer to the source project for full licensing terms.
+
+---
+
+## 🙏 Closing
+
+BrikByteOS is built on a simple but powerful belief:
+
+> **Releases should not rely on guesswork — they should be proven.**
+
+Every binary in this repository represents a release that has been:
+
+- deterministically built  
+- systematically validated  
+- objectively evaluated  
+
+Whether you're exploring, integrating, or building on top of BrikByteOS:
+
+> May your releases be **clear, confident, and correct.**
+
+---
+
+**Build with confidence. Ship with certainty.**
