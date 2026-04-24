@@ -1,11 +1,88 @@
 # BrikByteOS CLI Releases
 
-This repository provides the **official public binary distribution** for the BrikByteOS CLI.
+## 🚦 Stop Bad Releases Before They Hit Production
 
-BrikByteOS is a deterministic release certification system that answers a critical question:
+BrikByteOS is a deterministic release certification CLI that answers one question:
 
 > **"Is this release safe, compliant, and ready to ship?"**
 
+It turns fragmented CI signals into a clear release decision:
+
+```text
+APPROVED ✅
+REJECTED ❌
+CONDITIONAL ⚠️
+```
+
+---
+
+## ⚡ 30-Second Demo
+
+Run BrikByteOS in your project:
+```bash
+bb doctor --workdir .
+bb run --all --workdir .
+bb score --workdir .
+bb gate --workdir .
+```
+Example result:
+```
+❌ Critical vulnerabilities detected
+⚠️ Performance regression detected
+📉 Score: 58 → REJECTED
+```
+No dashboard required.  
+No guesswork.  
+Just a clear release decision.
+
+---
+
+## 🔁 CI Integration
+
+Add BrikByteOS to your CI pipeline:
+```yaml
+- name: BrikByte Gate
+  run: bb gate --workdir .
+```
+This is the conversion moment:
+
+> BrikByteOS blocks unsafe releases before they reach production.
+
+---
+
+## 📊 Proof
+
+BrikByteOS helps teams:
+- 🚫 Catch critical vulnerabilities before deployment
+- ⚠️ Detect performance regressions
+- 📉 Reject low-confidence releases
+- 🔍 Explain why a release failed
+- 🧾 Preserve deterministic evidence for review
+
+> A release can look green in CI and still be unsafe.  
+> BrikByteOS makes that risk visible.
+
+---
+
+## ⚡ Install → Run in Under 2 Minutes
+### Linux amd64
+```bash
+VERSION=v0.1.2
+BASE_URL="https://github.com/BrikByte-Studios/brikbyteos-cli-releases/releases/download/${VERSION}"
+
+curl -fL "${BASE_URL}/bb_linux_amd64.tar.gz" -o /tmp/bb.tar.gz
+curl -fL "${BASE_URL}/checksums.txt" -o /tmp/checksums.txt
+
+cd /tmp
+grep ' bb_linux_amd64.tar.gz$' checksums.txt | sha256sum -c -
+
+tar -xzf bb.tar.gz
+sudo install bb /usr/local/bin/bb
+```
+Verify installation:
+```bash
+bb version
+```
 ---
 
 ## 📦 What this repository contains
@@ -18,9 +95,10 @@ Each release includes:
 
 Supported platforms (Phase 0):
 
-- Linux (amd64)
-- macOS (amd64, arm64)
-- Windows (amd64)
+- Linux amd64
+- macOS amd64
+- macOS arm64
+- Windows amd64
 
 ---
 
@@ -48,69 +126,38 @@ Only install binaries that successfully pass verification.
 
 ---
 
-## 🚀 Installation
-### Linux (amd64)
-```bash
-VERSION=v0.1.0
-BASE_URL="https://github.com/BrikByte-Studios/brikbyteos-cli-releases/releases/download/${VERSION}"
-
-curl -fL "${BASE_URL}/bb_linux_amd64.tar.gz" -o /tmp/bb.tar.gz
-curl -fL "${BASE_URL}/checksums.txt" -o /tmp/checksums.txt
-
-cd /tmp
-grep ' bb_linux_amd64.tar.gz$' checksums.txt | sha256sum -c -
-
-tar -xzf bb.tar.gz
-sudo install bb /usr/local/bin/bb
-```
-
----
-
-## ⚙️ Verify installation
-```bash
-bb version
-```
-
----
-
 ## ⚙️ CLI Workflow (End-to-End)
 
-BrikByteOS is designed as a deterministic pipeline:
+BrikByteOS follows a deterministic release certification pipeline:
 ```
 Doctor → Run → Score → Gate → Inspect
 ```
 
-### 0️⃣ Doctor (Environment Readiness & Diagnostics)
-Check runtime readiness
+### 0️⃣ Doctor
+Validate environment readiness:
 
 ```bash
-bb doctor
+bb doctor --workdir .
 ```
-#### 📋 What bb `doctor` validates
-- ✅ CLI environment integrity
-- ✅ Required adapters availability:
-    - Jest
-    - Playwright
-    - k6
-    - Trivy
-- ✅ Binary accessibility (PATH resolution)
-- ✅ Workdir structure validity
-- ✅ `.bb/` artifact directory readiness
-- ✅ Permissions (read/write/execute)
-- ✅ Deterministic execution prerequisites
+`bb doctor` checks:
+- CLI environment integrity
+- Required adapter availability
+- Binary accessibility
+- Workdir validity
+- `.bb/` artifact directory readiness
+- Read/write permissions
+- Deterministic execution prerequisites
 
-### 1️⃣ Help
-
-Explore available commands:
+Use strict mode in CI:
 ```bash
-bb help
+bb doctor --workdir . --strict
 ```
 
-### 2️⃣ Run (Collect Evidence)
+### 1️⃣ Run
 
-Execute a deterministic run:
+Collect deterministic release evidence:
 ```bash
-bb run --all --workdir <path-to-root>
+bb run --all --workdir .
 ```
 Or run a specific adapter:
 ```bash
@@ -121,17 +168,18 @@ This produces a run under:
 .bb/runs/<run-id>/
 ```
 
-### 3️⃣ Score (Quantify Risk)
+### 2️⃣ Score
 
-Compute a release score:
+Compute release risk:
 ```bash
-bb score --manifest .bb/runs/<run-id>/manifest.json --workdir <path-to-root>
+bb score --manifest .bb/runs/<run-id>/manifest.json --workdir .
 ```
 Outputs:
-- score (0–100)
+- score from 0–100
 - risk factors
+- release confidence signal
 
-### 4️⃣ Gate (Decision)
+### 3️⃣ Gate
 
 Evaluate release readiness:
 ```bash
@@ -142,67 +190,44 @@ Possible outcomes:
 - REJECTED ❌
 - CONDITIONAL ⚠️
 
-
-### 5️⃣ Inspect (Understand Results)
-
-Inspect run details:
+### 4️⃣ Inspect
+Understand what happened:
 ```bash
-bb inspect --run-id <run-id> --workdir <path-to-root>
+bb inspect --run-id <run-id> --workdir .
 ```
-This allows you to:
+Use inspect to:
 - view normalized outputs
 - trace failures
 - understand scoring decisions
+- review evidence
 
-### 6️⃣ Optional: Visual Inspection (Offline Inspection Bundle)
 
-Render a human-friendly report:
-```
-bb inspect --run-id <run-id> --workdir <path-to-root> --ui
-bb inspect --run-id <run-id> --workdir <path-to-root> --html
+
+### 5️⃣ Optional Visual Inspection
+
+Generate an offline inspection bundle:
+```bash
+bb inspect --run-id <run-id> --workdir . --ui
+bb inspect --run-id <run-id> --workdir . --html
 ```
 Output:
 
 - `.bb/runs/<run-id>/ui-data.json`
 - `.bb/runs/<run-id>/report.html`
 
-Then open in browser:
+Then open the report:
 ```bash
 open .bb/runs/<run-id>/report.html     # macOS
 xdg-open .bb/runs/<run-id>/report.html # Linux
 ```
----
-
-## 🔁 CI Integration (Preflight with `bb doctor`)
-
-BrikByteOS is built on **deterministic execution**.
-
-To guarantee reliable and reproducible results in automated environments, integrate `bb doctor` as a **mandatory preflight gate** in your CI/CD pipeline.
 
 ---
 
-### 🧠 CI Pipeline Model
+## 🔁 CI Integration Guide
 
-BrikByteOS pipelines follow a strict execution order:
-```
-Doctor → Run → Score → Gate → Inspect
-```
+BrikByteOS should run as a release confidence gate in CI.
 
-
-| Stage   | Purpose |
-|--------|--------|
-| Doctor | Validate environment readiness |
-| Run    | Collect deterministic evidence |
-| Score  | Quantify release risk |
-| Gate   | Enforce policy decision |
-| Inspect| Explain and visualize results |
-
----
-
-## ⚙️ GitHub Actions (Recommended)
-
-### 🔹 Minimal Production Pipeline
-
+### ⚙️ GitHub Actions (Recommended)
 ```yaml
 name: brikbyteos-pipeline
 
@@ -273,20 +298,9 @@ jobs:
           path: .bb/runs/*/report.html
 ```
 
-### ⚠️ Why `bb doctor --strict`?
-```bash
-bb doctor --workdir . --strict
-```
-This ensures the pipeline **fails immediately** if:
-- Required adapters are missing (Jest, Playwright, k6, Trivy)
-- Workdir is invalid
-- Permissions are incorrect
-- `.bb/` artifact directory is not writable
-- Environment is non-deterministic
+---
 
-> A pipeline that runs in a broken environment produces false confidence.
-
-### 🧪 Optional: Machine-Readable Diagnostics
+## 🧪 Optional: Machine-Readable Diagnostics
 
 Export doctor results for observability:
 ```yaml
@@ -301,9 +315,10 @@ Export doctor results for observability:
     path: doctor-report.json
 ```
 Use cases:
-- Debugging CI failures
-- Detecting environment drift
-- Feeding dashboards (future phases)
+- CI debugging
+- environment drift detection
+- future dashboards
+- audit trails
 
 
 ### 🚫 Anti-Pattern (Avoid This)
@@ -328,22 +343,11 @@ before any execution step.
 
 ---
 
-## 🔚 Final CI Execution Flow
-```bash
-bb doctor --strict
-bb run --all
-bb score
-bb gate
-bb inspect
-```
-
----
-
 ## 🔄 Upgrading
 
 To upgrade, repeat the installation steps with a newer version:
 ```bash
-VERSION=v0.1.1
+VERSION=v0.1.3
 ```
 
 ---
@@ -375,12 +379,13 @@ This repository exists to:
 
 BrikByteOS separates:
 ```
-Source (private) → Validation → Artifact → Public Distribution
+Source → Validation → Artifact → Public Distribution
 ```
 This ensures:
 - integrity of released binaries
-- controlled exposure of implementation
-- reproducibility of release outputs
+- controlled implementation exposure
+- reproducible release outputs
+- trusted public installation
 
 ---
 
