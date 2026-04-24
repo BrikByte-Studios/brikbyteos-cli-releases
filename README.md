@@ -80,11 +80,30 @@ BrikByteOS is designed as a deterministic pipeline:
 Run → Score → Gate → Inspect
 ```
 
+### 0️⃣ Doctor (Environment Readiness & Diagnostics)
+Check runtime readiness
+
+```bash
+bb doctor
+```
+#### 📋 What bb `doctor` validates
+- ✅ CLI environment integrity
+- ✅ Required adapters availability:
+    - Jest
+    - Playwright
+    - k6
+    - Trivy
+- ✅ Binary accessibility (PATH resolution)
+- ✅ Workdir structure validity
+- ✅ `.bb/` artifact directory readiness
+- ✅ Permissions (read/write/execute)
+- ✅ Deterministic execution prerequisites
+
 ### 1️⃣ Help
 
 Explore available commands:
 ```bash
-bb --help
+bb help
 ```
 
 ### 2️⃣ Run (Collect Evidence)
