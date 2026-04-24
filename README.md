@@ -77,7 +77,7 @@ bb version
 
 BrikByteOS is designed as a deterministic pipeline:
 ```
-Run → Score → Gate → Inspect
+Doctor → Run → Score → Gate → Inspect
 ```
 
 ### 0️⃣ Doctor (Environment Readiness & Diagnostics)
@@ -171,6 +171,172 @@ Then open in browser:
 open .bb/runs/<run-id>/report.html     # macOS
 xdg-open .bb/runs/<run-id>/report.html # Linux
 ```
+---
+
+## 🔁 CI Integration (Preflight with `bb doctor`)
+
+BrikByteOS is built on **deterministic execution**.
+
+To guarantee reliable and reproducible results in automated environments, integrate `bb doctor` as a **mandatory preflight gate** in your CI/CD pipeline.
+
+---
+
+### 🧠 CI Pipeline Model
+
+BrikByteOS pipelines follow a strict execution order:
+```
+Doctor → Run → Score → Gate → Inspect
+```
+
+
+| Stage   | Purpose |
+|--------|--------|
+| Doctor | Validate environment readiness |
+| Run    | Collect deterministic evidence |
+| Score  | Quantify release risk |
+| Gate   | Enforce policy decision |
+| Inspect| Explain and visualize results |
+
+---
+
+## ⚙️ GitHub Actions (Recommended)
+
+### 🔹 Minimal Production Pipeline
+
+```yaml
+name: brikbyteos-pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  release-certification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install bb CLI
+        run: |
+          set -euo pipefail
+
+          VERSION=v0.1.2
+          BASE_URL="https://github.com/BrikByte-Studios/brikbyteos-cli-releases/releases/download/${VERSION}"
+
+          curl -fL "${BASE_URL}/bb_linux_amd64.tar.gz" -o bb.tar.gz
+          tar -xzf bb.tar.gz
+          sudo mv bb /usr/local/bin/bb
+
+      - name: Verify installation
+        run: bb version
+
+      # 🩺 Stage 0: Doctor (FAIL FAST)
+      - name: Environment validation
+        run: |
+          set -euo pipefail
+          bb doctor --workdir . --strict
+
+      # 🚀 Stage 1: Run
+      - name: Execute deterministic run
+        run: |
+          set -euo pipefail
+          bb run --all --workdir .
+
+      # 📊 Stage 2: Score
+      - name: Compute score
+        run: |
+          set -euo pipefail
+          RUN_ID=$(ls -t .bb/runs | head -n1)
+          bb score --manifest .bb/runs/$RUN_ID/manifest.json --workdir .
+
+      # 🚦 Stage 3: Gate
+      - name: Evaluate gate
+        run: |
+          set -euo pipefail
+          RUN_ID=$(ls -t .bb/runs | head -n1)
+          bb gate --manifest .bb/runs/$RUN_ID/manifest.json --policy production --workdir .
+
+      # 🔍 Stage 4: Inspect
+      - name: Generate report
+        run: |
+          set -euo pipefail
+          RUN_ID=$(ls -t .bb/runs | head -n1)
+          bb inspect --run-id $RUN_ID --workdir . --html
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: brikbyteos-report
+          path: .bb/runs/*/report.html
+```
+
+### ⚠️ Why `bb doctor --strict`?
+```bash
+bb doctor --workdir . --strict
+```
+This ensures the pipeline **fails immediately** if:
+- Required adapters are missing (Jest, Playwright, k6, Trivy)
+- Workdir is invalid
+- Permissions are incorrect
+- `.bb/` artifact directory is not writable
+- Environment is non-deterministic
+
+> A pipeline that runs in a broken environment produces false confidence.
+
+### 🧪 Optional: Machine-Readable Diagnostics
+
+Export doctor results for observability:
+```yaml
+- name: Export doctor report
+  run: |
+    bb doctor --workdir . --json > doctor-report.json
+
+- name: Upload doctor report
+  uses: actions/upload-artifact@v4
+  with:
+    name: doctor-report
+    path: doctor-report.json
+```
+Use cases:
+- Debugging CI failures
+- Detecting environment drift
+- Feeding dashboards (future phases)
+
+
+### 🚫 Anti-Pattern (Avoid This)
+```yaml
+# ❌ Incorrect pipeline
+- run: bb run --all
+```
+Why this is dangerous:
+- Missing tools → false failures
+- Skipped adapters → incomplete evidence
+- Silent drift → unreliable scoring
+- Green pipeline → invalid confidence
+
+
+### ✅ Best Practice
+
+Always enforce:
+```bash
+bb doctor --strict
+```
+before any execution step.
+
+---
+
+## 🔚 Final CI Execution Flow
+```bash
+bb doctor --strict
+bb run --all
+bb score
+bb gate
+bb inspect
+```
+
 ---
 
 ## 🔄 Upgrading
