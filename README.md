@@ -161,7 +161,7 @@ bb run --all --workdir .
 ```
 Or run a specific adapter:
 ```bash
-bb run --adapter jest --workdir <path-to-root>
+bb run --adapter jest --workdir .
 ```
 This produces a run under:
 ```
@@ -183,8 +183,7 @@ Outputs:
 
 Evaluate release readiness:
 ```bash
-bb gate --manifest .bb/runs/<run-id>/manifest.json --policy production --workdir <path-to-root>
-```
+bb gate --manifest .bb/runs/<run-id>/manifest.json --policy production --workdir .
 Possible outcomes:
 - APPROVED ✅
 - REJECTED ❌
